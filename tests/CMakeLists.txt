@@ -1,6 +1,7 @@
 PROJECT(tests)
 
 SET(tests
+  test_resp
   test_zservice
   test_parametermanager
   )
