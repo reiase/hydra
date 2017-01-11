@@ -42,7 +42,6 @@ class Session {
   int mode;
 
  private:
-  std::shared_ptr<resp::Message> parser;
   std::string ibuffer;
   std::string obuffer;
 };
