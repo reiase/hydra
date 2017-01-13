@@ -5,6 +5,7 @@
 #include <thread>
 
 #include "resp.hh"
+#include "logging.hh"
 
 namespace reiase {
 namespace service {
@@ -14,9 +15,13 @@ class SessionHandler {};
 class Service {
  public:
   static int CreateServiceSocket(int port = -1);
+  void setHandler(std::function<resp::Msg(const resp::Msg &)> h) {
+    handler = h;
+    LOG("1 set handler %d %d", !!h, !!handler);
+  }
 
-  void rpc(std::function<resp::Msg(resp::Msg)> func){
-    handler = func;
+  void rpc(std::function<resp::Msg(const resp::Msg&)> func){
+    setHandler(func);
     start();
   };
 
@@ -39,7 +44,7 @@ class Service {
  protected:
   int enable;
   std::thread *worker;
-  std::function<resp::Msg(resp::Msg)> handler;
+  std::function<resp::Msg(const resp::Msg&)> handler;
 };
 
 }  // service

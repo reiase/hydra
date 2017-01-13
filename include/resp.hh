@@ -36,13 +36,13 @@ class Msg {
   std::shared_ptr<Msg> push_back() { return push_back(AUTO); }
 
  public:
-  inline bool isAuto() { return flag == 0; }
-  inline bool isInteget() { return (flag & INTEGER) > 0; }
-  inline bool isString() { return flag & STRING; }
-  inline bool isArray() { return flag & ARRAY; }
-  inline bool isSimpleString() { return flag & SIMPLESTRING; }
-  inline bool isBulkString() { return flag & BULKSTRING; }
-  inline bool isError() { return flag & ERROR; }
+  inline bool isAuto() const { return flag == 0; }
+  inline bool isInteget() const { return (flag & INTEGER) > 0; }
+  inline bool isString() const { return flag & STRING; }
+  inline bool isArray() const { return flag & ARRAY; }
+  inline bool isSimpleString() const { return flag & SIMPLESTRING; }
+  inline bool isBulkString() const { return flag & BULKSTRING; }
+  inline bool isError() const { return flag & ERROR; }
 
   void setError() {
     if (isSimpleString())
@@ -57,9 +57,13 @@ class Msg {
   }
 
  public:
-  int& asInt() { return value.ivalue; }
-  std::string& asString() { return *value.svalue; }
-  std::vector<std::shared_ptr<Msg>>& asList() { return *value.avalue; }
+  const int& asInt() const { return value.ivalue; };
+  const std::string& asString() const { return *value.svalue; }
+  const std::vector<std::shared_ptr<Msg>>& asList() const {
+    return *value.avalue;
+  }
+
+  std::string& strbuf() { return *value.svalue; }
 
  public:
   Msg() : flag(AUTO) {}
@@ -70,8 +74,8 @@ class Msg {
     // std::cerr << flag << ":" << this << std::endl;
     if (isString()) delete value.svalue;
     if (isArray()) {
-      value.avalue->clear();
-      delete value.avalue;
+      //value.avalue->clear();
+      //delete value.avalue;
     }
     flag = fg;
   }
@@ -91,8 +95,16 @@ class Msg {
     }
   }
 
+  void operator=(const Msg& m) {
+    flag = m.flag;
+    if (isInteget()) value.ivalue = m.asInt();
+    if (isString()) value.svalue = new std::string(m.asString());
+    if (isArray())
+      value.avalue = new std::vector<std::shared_ptr<Msg>>(m.asList());
+  }
+
  public:
-  inline std::string encode() {
+  inline std::string encode() const {
     std::stringstream ss;
     if (isInteget()) ss << ':' << value.ivalue << "\r\n";
     if (isString()) {
@@ -125,10 +137,10 @@ class Msg {
 class MsgParser {
  public:
   int reset(void) {
-    buffer = "";
+    buffer.clear();
     msg = std::make_shared<Msg>();
     vstack.clear();
-    vstack.push_back(msg);
+    vstack.push_back(msg.get());
     return 1;
   }
 
@@ -146,12 +158,13 @@ class MsgParser {
     buffer.push_back(c);
     if ((mask & 0xFFFF) == 3338) {
       feed(buffer.substr(0, buffer.size() - 2));
-      buffer = "";
+      buffer.clear();
     }
     return ready();
   };
 
-  std::shared_ptr<Msg> result() { return msg; }
+  const std::shared_ptr<Msg>& result() { return msg; }
+  std::shared_ptr<Msg> pop() { return std::move(msg); }
 
   static std::shared_ptr<MsgParser> create() {
     auto ptr = std::make_shared<MsgParser>();
@@ -162,9 +175,9 @@ class MsgParser {
  private:
   int decode(std::string frame) {
     if (vstack.size() == 0) return -1;
-    std::shared_ptr<Msg>& current = vstack.back();
+    Msg* current = vstack.back();
     if (current->isBulkString()) {
-      std::string& bs = current->asString();
+      std::string& bs = current->strbuf();
       if (bs.size() < size) {
         bs.append(frame);
         if (bs.size() < size) {
@@ -199,7 +212,8 @@ class MsgParser {
       for (int i = 0; i < size; i++) current->push_back();
       vstack.pop_back();
       auto list = current->asList();
-      for (auto i = list.rbegin(); i != list.rend(); i++) vstack.push_back(*i);
+      for (auto i = list.rbegin(); i != list.rend(); i++)
+        vstack.push_back(i->get());
 
       return 0;
     } else {  // inline cmd
@@ -214,7 +228,7 @@ class MsgParser {
   int mask;
   int size;
   std::string buffer;
-  std::vector<std::shared_ptr<Msg>> vstack;
+  std::vector<Msg*> vstack;
   std::shared_ptr<Msg> msg;
 };
 };

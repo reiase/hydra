@@ -29,7 +29,15 @@ int Session::onRead() {
       parser.feed(buffer[i]);
       if (parser.ready()) {
         auto req = parser.result();
-        // auto rsp = handler(req);
+        try {
+          bool b = !!handler;
+          resp::Msg (*ptr)(const resp::Msg &) =
+              handler.target<resp::Msg(const resp::Msg &)>();
+          //          std::cerr << b << ptr << std::endl;
+          auto rsp = handler(*(req.get()));
+        } catch (const std::bad_function_call &e) {
+          std::cout << e.what() << '\n';
+        }
         obuffer.append(req->encode());
         parser.reset();
         write(fd, obuffer.c_str(), obuffer.size());
@@ -74,7 +82,7 @@ void EService::main_loop(void) {
   std::map<int, Session> sessions;
   while (enable) {
     int nfd = epoll_wait(epoll_fd, evs, MAX_EVENTS, 500);
-    //LOG("events: %d", nfd);
+    // LOG("events: %d", nfd);
     for (int i = 0; i < nfd; i++) {
       struct epoll_event &e = evs[i];
       if (service_fd == e.data.fd) {
@@ -86,6 +94,7 @@ void EService::main_loop(void) {
         s.setHandler(handler);
         sessions[client_fd] = s;
         sessions[client_fd].onInit();
+        sessions[client_fd].setHandler(handler);
 
         ev.data.fd = client_fd;
         ev.events = EPOLLIN | EPOLLHUP | EPOLLRDHUP;

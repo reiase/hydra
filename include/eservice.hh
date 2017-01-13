@@ -38,7 +38,10 @@ class Session {
   Session(int x) : fd(x) {}
   Session(const Session &s) : fd(s.fd), mode(s.mode), handler(s.handler) {}
 
-  void setHandler(std::function<resp::Msg(resp::Msg)> h) { handler = h; }
+  void setHandler(std::function<resp::Msg(const resp::Msg &)> h) {
+    handler = h;
+    LOG("set handler %d %d", !!h, !!handler);
+  }
   void emit(void);
 
  public:
@@ -50,7 +53,7 @@ class Session {
   std::string obuffer;
   resp::MsgParser parser;
 
-  std::function<resp::Msg(resp::Msg)> handler;
+  std::function<resp::Msg(const resp::Msg &)> handler;
 };
 
 class EService : public Service {
@@ -64,7 +67,6 @@ class EService : public Service {
   int epoll_fd;
   int service_fd;
 
-  std::function<resp::Msg(resp::Msg)> handler;
   std::vector<Session> sessions;
 };
 

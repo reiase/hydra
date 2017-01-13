@@ -7,7 +7,15 @@ int main(int argc, char *argv[]) {
   service::EService es;
   int s = service::Service::CreateServiceSocket();
   es.bind(s);
-  es.rpc([](resp::Msg x) -> resp::Msg {return x;});
+  int cnt = 0;
+  es.rpc([&cnt](const resp::Msg &x) -> resp::Msg {
+    resp::Msg y;
+    cnt++;
+    y = "PONG";
+    // printf("%d\n", cnt);
+    // printf(x.encode().c_str());
+    return y;
+  });
   es.join();
   return 0;
 }
