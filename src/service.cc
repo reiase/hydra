@@ -9,6 +9,7 @@
 #include <iostream>
 
 #include "service.hh"
+#include "logging.hh"
 
 namespace reiase {
 namespace service {
@@ -22,14 +23,16 @@ int Service::CreateServiceSocket(int port) {
   int retval = 0;
 
   do {
-    port = getport();
+    int iport = getport();
     memset(&sin, sizeof(sin), 0);
     sin.sin_family = AF_INET;
-    sin.sin_port = htons(port);
+    sin.sin_port = htons(iport);
     sin.sin_addr.s_addr = INADDR_ANY;
     retval = bind(sock, (struct sockaddr *)&sin, sizeof(sin));
     if (retval == -1) {
       perror(NULL);
+    } else {
+      LOG("create service on port: %d", iport);
     }
   } while (retval != 0);
   listen(sock, 1);

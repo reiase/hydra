@@ -7,6 +7,6 @@
 #include "../include/hydra.hh"
 
 int main(int argc, char *argv[]) {
-  ParameterManager pm();
+  //  ParameterManager pm();
   return 0;
 }

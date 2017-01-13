@@ -4,4 +4,4 @@ add_library(hydra
   eservice.cc
   hydra.cc
   service.cc)
-target_link_libraries(hydra zmq)
+target_link_libraries(hydra)

@@ -3,7 +3,6 @@ PROJECT(tests)
 SET(tests
   test_resp
   test_eservice
-  test_zservice
   test_parametermanager
   )
 

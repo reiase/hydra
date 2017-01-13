@@ -16,6 +16,7 @@ int Session::onInit() {
   int opts = fcntl(fd, F_GETFL) | O_NONBLOCK;
   fcntl(fd, F_SETFL, opts);
   mode = EPOLLIN;
+  parser.reset();
   return 1;
 }
 
@@ -24,9 +25,21 @@ int Session::onRead() {
   int retval = 1;
   while (retval > 0) {
     retval = read(fd, buffer, 4096);
-    if (retval > 0) ibuffer.append(buffer, retval);
+    for (int i = 0; i < retval; i++) {
+      parser.feed(buffer[i]);
+      if (parser.ready()) {
+        auto req = parser.result();
+        // auto rsp = handler(req);
+        obuffer.append(req->encode());
+        parser.reset();
+        write(fd, obuffer.c_str(), obuffer.size());
+        obuffer = "";
+        return 0;
+      }
+    }
+    // if (retval > 0) ibuffer.append(buffer, retval);
   }
-  LOG("buffer:%s", ibuffer.c_str());
+  // LOG("buffer:%s", ibuffer.c_str());
   return 0;
 }
 
@@ -61,6 +74,7 @@ void EService::main_loop(void) {
   std::map<int, Session> sessions;
   while (enable) {
     int nfd = epoll_wait(epoll_fd, evs, MAX_EVENTS, 500);
+    //LOG("events: %d", nfd);
     for (int i = 0; i < nfd; i++) {
       struct epoll_event &e = evs[i];
       if (service_fd == e.data.fd) {
@@ -69,10 +83,12 @@ void EService::main_loop(void) {
           std::cerr << "error accept new connection." << std::endl;
         }
         Session s(client_fd);
+        s.setHandler(handler);
         sessions[client_fd] = s;
+        sessions[client_fd].onInit();
 
         ev.data.fd = client_fd;
-        ev.events = EPOLLIN;
+        ev.events = EPOLLIN | EPOLLHUP | EPOLLRDHUP;
         if (-1 == epoll_ctl(epoll_fd, EPOLL_CTL_ADD, client_fd, &ev)) {
           std::cerr << "error add new session" << std::endl;
         }
@@ -80,20 +96,23 @@ void EService::main_loop(void) {
         auto &session = sessions[e.data.fd];
         int need_update = 0;
         if (e.events & EPOLLIN) {
-          INFO("read on %d", e.data.fd);
+          // INFO("read on %d", e.data.fd);
           need_update = session.onRead();
         }
         if (e.events & EPOLLOUT) {
           need_update = session.onWrite();
         }
-        if (e.events & EPOLLERR) {
-          INFO("error on %d", e.data.fd);
+        if ((e.events & EPOLLERR) || (e.events & EPOLLRDHUP)) {
+          INFO("close %d", e.data.fd);
           int should_close = session.onError();
           if (should_close) {
             ev.data.fd = session.fd;
             epoll_ctl(epoll_fd, EPOLL_CTL_DEL, session.fd, &ev);
             auto it = sessions.find(session.fd);
-            if (it != sessions.end()) sessions.erase(it);
+            if (it != sessions.end())
+              sessions.erase(it);
+            else
+              LOG("failed to close", "");
             session.destory();
           }
         }
@@ -102,9 +121,9 @@ void EService::main_loop(void) {
           ev.events = session.mode;
           if (-1 == epoll_ctl(epoll_fd, EPOLL_CTL_MOD, e.data.fd, &ev)) {
             LOG("error update fd %d", e.data.fd);
-          } // end if
-        } //end if 
-      } //end for
+          }  // end if
+        }    // end if
+      }      // end for
     }
   }
 }

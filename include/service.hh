@@ -4,15 +4,21 @@
 #include <functional>
 #include <thread>
 
+#include "resp.hh"
+
 namespace reiase {
 namespace service {
+
+class SessionHandler {};
 
 class Service {
  public:
   static int CreateServiceSocket(int port = -1);
 
-  template <typename REQ, typename RSP>
-  void rpc(std::function<RSP(REQ)> func);
+  void rpc(std::function<resp::Msg(resp::Msg)> func){
+    handler = func;
+    start();
+  };
 
   template <typename MSG>
   void pull(std::function<void(MSG)> func);
@@ -33,6 +39,7 @@ class Service {
  protected:
   int enable;
   std::thread *worker;
+  std::function<resp::Msg(resp::Msg)> handler;
 };
 
 }  // service

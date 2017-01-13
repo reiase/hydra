@@ -1,6 +1,7 @@
 #ifndef RESP_HH
 #define RESP_HH
 
+#include <iostream>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -29,7 +30,7 @@ class Msg {
     setFlag(ARRAY);
 
     auto ptr = std::make_shared<Msg>(x);
-    value.avalue->push_back(ptr);
+    value.avalue->push_back(std::move(ptr));
     return ptr;
   }
   std::shared_ptr<Msg> push_back() { return push_back(AUTO); }
@@ -66,8 +67,12 @@ class Msg {
   Msg(int x) : flag(INTEGER) { value.ivalue = x; }
   Msg(std::string s) : flag(STRING) { *this = s; }
   void reset(int fg = AUTO) {
+    // std::cerr << flag << ":" << this << std::endl;
     if (isString()) delete value.svalue;
-    if (isArray()) delete value.avalue;
+    if (isArray()) {
+      value.avalue->clear();
+      delete value.avalue;
+    }
     flag = fg;
   }
   ~Msg() { reset(); }
@@ -87,7 +92,7 @@ class Msg {
   }
 
  public:
-  std::string encode() {
+  inline std::string encode() {
     std::stringstream ss;
     if (isInteget()) ss << ':' << value.ivalue << "\r\n";
     if (isString()) {
@@ -197,7 +202,11 @@ class MsgParser {
       for (auto i = list.rbegin(); i != list.rend(); i++) vstack.push_back(*i);
 
       return 0;
+    } else {  // inline cmd
+      *current = frame;
+      return 1;
     }
+
     return -1;
   }
 

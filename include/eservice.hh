@@ -5,12 +5,13 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <functional>
 #include <string>
 #include <vector>
 
 #include "logging.hh"
-#include "service.hh"
 #include "resp.hh"
+#include "service.hh"
 
 namespace reiase {
 namespace service {
@@ -35,7 +36,10 @@ class Session {
 
   Session(){};
   Session(int x) : fd(x) {}
-  Session(const Session &s) : fd(s.fd), mode(s.mode) {}
+  Session(const Session &s) : fd(s.fd), mode(s.mode), handler(s.handler) {}
+
+  void setHandler(std::function<resp::Msg(resp::Msg)> h) { handler = h; }
+  void emit(void);
 
  public:
   int fd;
@@ -44,6 +48,9 @@ class Session {
  private:
   std::string ibuffer;
   std::string obuffer;
+  resp::MsgParser parser;
+
+  std::function<resp::Msg(resp::Msg)> handler;
 };
 
 class EService : public Service {
@@ -57,6 +64,7 @@ class EService : public Service {
   int epoll_fd;
   int service_fd;
 
+  std::function<resp::Msg(resp::Msg)> handler;
   std::vector<Session> sessions;
 };
 
