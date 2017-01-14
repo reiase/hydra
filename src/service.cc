@@ -8,12 +8,12 @@
 #include <cstring>
 #include <iostream>
 
-#include "service.hh"
 #include "logging.hh"
+#include "service.hh"
 
 namespace reiase {
 namespace service {
-int Service::CreateServiceSocket(int port) {
+int CreateServiceSocket(int port) {
   auto getport = [&]() -> int {
     return port > 0 ? port : (std::rand() % 50000 + 1024);
   };

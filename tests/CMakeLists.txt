@@ -2,8 +2,8 @@ PROJECT(tests)
 
 SET(tests
   test_resp
-  test_eservice
   test_parametermanager
+  test_reactor
   )
 
 foreach(test ${tests})

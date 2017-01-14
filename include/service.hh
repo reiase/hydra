@@ -4,23 +4,28 @@
 #include <functional>
 #include <thread>
 
-#include "resp.hh"
 #include "logging.hh"
+#include "protocol.h"
 
 namespace reiase {
 namespace service {
 
-class SessionHandler {};
+int CreateServiceSocket(int port = -1);
 
+template <typename PROTO>
 class Service {
  public:
-  static int CreateServiceSocket(int port = -1);
-  void setHandler(std::function<resp::Msg(const resp::Msg &)> h) {
+  // typedef typename proto_traits<PROTO>::MSGTYPE MSGTYPE;
+  // typedef typename std::function<MSGTYPE(const MSGTYPE &)> HANDLER;
+  typedef typename Protocol<PROTO>::MSGTYPE MSGTYPE;
+  typedef typename Protocol<PROTO>::HANDLER HANDLER;
+  void setHandler(HANDLER h) {
     handler = h;
-    LOG("1 set handler %d %d", !!h, !!handler);
-  }
+    LOG("1 set handler %d %d %d %d", !!h, !!handler,
+        h.target_type().hash_code(), handler.target_type().hash_code());
+  };
 
-  void rpc(std::function<resp::Msg(const resp::Msg&)> func){
+  void rpc(HANDLER func) {
     setHandler(func);
     start();
   };
@@ -38,13 +43,12 @@ class Service {
     delete worker;
   };
 
- private:
   virtual void main_loop(void){};
 
- protected:
+ public:
   int enable;
   std::thread *worker;
-  std::function<resp::Msg(const resp::Msg&)> handler;
+  HANDLER handler;
 };
 
 }  // service

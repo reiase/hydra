@@ -1,7 +1,6 @@
 #ifndef RESP_HH
 #define RESP_HH
 
-#include <iostream>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -44,14 +43,14 @@ class Msg {
   inline bool isBulkString() const { return flag & BULKSTRING; }
   inline bool isError() const { return flag & ERROR; }
 
-  void setError() {
+  inline void setError() {
     if (isSimpleString())
       setFlag(ERROR | STRING);
     else
       throw;
   }
 
-  void setBulk() {
+  inline void setBulk() {
     value.svalue = new std::string();
     setFlag(BULKSTRING | STRING);
   }
@@ -70,12 +69,11 @@ class Msg {
   Msg(MSGTYPE t) : flag(t) {}
   Msg(int x) : flag(INTEGER) { value.ivalue = x; }
   Msg(std::string s) : flag(STRING) { *this = s; }
-  void reset(int fg = AUTO) {
-    // std::cerr << flag << ":" << this << std::endl;
+  inline void reset(int fg = AUTO) {
     if (isString()) delete value.svalue;
     if (isArray()) {
-      //value.avalue->clear();
-      //delete value.avalue;
+      value.avalue->clear();
+      delete value.avalue;
     }
     flag = fg;
   }
@@ -87,6 +85,7 @@ class Msg {
   }
 
   void operator=(std::string s) {
+    reset(STRING);
     value.svalue = new std::string(s);
     if (s.find("\r\n") != std::string::npos) {
       flag |= SIMPLESTRING;
@@ -95,12 +94,15 @@ class Msg {
     }
   }
 
+  void operator=(std::vector<std::shared_ptr<Msg>> a) {
+    reset(ARRAY);
+    value.avalue = new std::vector<std::shared_ptr<Msg>>(a);
+  }
+
   void operator=(const Msg& m) {
-    flag = m.flag;
-    if (isInteget()) value.ivalue = m.asInt();
-    if (isString()) value.svalue = new std::string(m.asString());
-    if (isArray())
-      value.avalue = new std::vector<std::shared_ptr<Msg>>(m.asList());
+    if (m.isInteget()) *this = m.asInt();
+    if (m.isString()) *this = m.asString();
+    if (m.isArray()) *this = m.asList();
   }
 
  public:
