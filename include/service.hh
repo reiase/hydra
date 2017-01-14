@@ -15,15 +15,9 @@ int CreateServiceSocket(int port = -1);
 template <typename PROTO>
 class Service {
  public:
-  // typedef typename proto_traits<PROTO>::MSGTYPE MSGTYPE;
-  // typedef typename std::function<MSGTYPE(const MSGTYPE &)> HANDLER;
   typedef typename Protocol<PROTO>::MSGTYPE MSGTYPE;
   typedef typename Protocol<PROTO>::HANDLER HANDLER;
-  void setHandler(HANDLER h) {
-    handler = h;
-    LOG("1 set handler %d %d %d %d", !!h, !!handler,
-        h.target_type().hash_code(), handler.target_type().hash_code());
-  };
+  void setHandler(HANDLER h) { handler = h; };
 
   void rpc(HANDLER func) {
     setHandler(func);
@@ -31,7 +25,7 @@ class Service {
   };
 
   template <typename MSG>
-  void pull(std::function<void(MSG)> func);
+  void pull(HANDLER func);
 
   void start(void) {
     enable = 1;

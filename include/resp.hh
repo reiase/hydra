@@ -211,7 +211,7 @@ class MsgParser {
     if (frame[0] == '*') {
       size = atoi(frame.c_str() + 1);
       current->reset();
-      for (int i = 0; i < size; i++) current->push_back();
+      for (size_t i = 0; i < size; i++) current->push_back();
       vstack.pop_back();
       auto list = current->asList();
       for (auto i = list.rbegin(); i != list.rend(); i++)
@@ -228,7 +228,7 @@ class MsgParser {
 
  private:
   int mask;
-  int size;
+  size_t size;
   std::string buffer;
   std::vector<Msg*> vstack;
   std::shared_ptr<Msg> msg;

@@ -21,13 +21,13 @@ struct proto_traits<RESPProto> {
 
 class RESPProto : public Protocol<RESPProto> {
  public:
-  void onInit() {
+  void onInitImpl() {
     int opts = fcntl(fd, F_GETFL) | O_NONBLOCK;
     fcntl(fd, F_SETFL, opts);
     parser.reset();
   };
 
-  void onRead() {
+  void onReadImpl() {
     char buffer[buf_size];
     int retval = 1;
     while (retval > 0) {
