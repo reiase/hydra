@@ -1,5 +1,5 @@
-#ifndef LOGGING_HH
-#define LOGGING_HH
+#ifndef LOGGING_H
+#define LOGGING_H
 
 #define NONE_LEVEL 0x00
 #define ERROR_LEVEL 0x01

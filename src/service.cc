@@ -8,7 +8,7 @@
 #include <cstring>
 #include <iostream>
 
-#include "logging.hh"
+#include "logging.h"
 #include "service.hh"
 
 namespace reiase {

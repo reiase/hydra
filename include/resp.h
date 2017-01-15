@@ -1,5 +1,5 @@
-#ifndef RESP_HH
-#define RESP_HH
+#ifndef RESP_H
+#define RESP_H
 
 #include <memory>
 #include <sstream>

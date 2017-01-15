@@ -1,8 +1,7 @@
 #include <cstdlib>
-#include "../include/resp.hh"
-#include "../include/resp_proto.h"
-#include "../include/resp_proto.h"
+#include "../include/line_proto.h"
 #include "../include/reactor.h"
+#include "../include/resp_proto.h"
 
 using namespace reiase;
 
@@ -17,6 +16,15 @@ int main(int argc, char *argv[]) {
     y = cnt;
     return y;
   });
+
+  int s2 = service::CreateServiceSocket();
+  service::Reactor<service::LineProto> es2;
+  es2.bind(s2);
+  es2.rpc([](const std::string &x)->std::string {
+      return x;
+    });
+
   es.join();
+  es2.join();
   return 0;
 }

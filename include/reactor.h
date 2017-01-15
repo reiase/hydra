@@ -10,7 +10,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "logging.hh"
+#include "logging.h"
 #include "protocol.h"
 #include "service.hh"
 

@@ -1,5 +1,5 @@
-#ifndef RESP_PROTO_H
-#define RESP_PROTO_H
+#ifndef LINE_PROTO_H
+#define LINE_PROTO_H
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -11,19 +11,19 @@
 namespace reiase {
 namespace service {
 
-class RESPProto;
+class LineProto;
 
 template <>
-struct proto_traits<RESPProto> {
-  typedef typename resp::Msg MSGTYPE;
+struct proto_traits<LineProto> {
+  typedef typename std::string MSGTYPE;
 };
 
-class RESPProto : public Protocol<RESPProto> {
+class LineProto : public Protocol<LineProto> {
  public:
   void onInitImpl() {
     int opts = fcntl(fd, F_GETFL) | O_NONBLOCK;
     fcntl(fd, F_SETFL, opts);
-    parser.reset();
+    line.clear();
   };
 
   void onReadImpl() {
@@ -31,27 +31,25 @@ class RESPProto : public Protocol<RESPProto> {
     int retval = 1;
     while (retval > 0) {
       retval = read(fd, buffer, buf_size);
+
       for (int i = 0; i < retval; i++) {
-        parser.feed(buffer[i]);
-        if (parser.ready()) {
-          auto req = parser.pop();
-          auto rsp = handler(*req.get());
-          std::string obuffer = rsp.encode();
+        line.push_back(buffer[i]);
+        if (buffer[i] == '\n'){
+          auto obuffer = handler(line);
           write(fd, obuffer.c_str(), obuffer.size());
-          parser.reset();
-          //          LOG("onRead rsp: ", obuffer.c_str());
-        }  // end if
+          line.clear();
+        }
       }    // end for
     }      // end while
   }
 
  public:
-  RESPProto(){};
-  RESPProto(int x) : Protocol(x){};
-  RESPProto(const RESPProto &p) : Protocol(p){};
+  LineProto(){};
+  LineProto(int x) : Protocol(x){};
+  LineProto(const LineProto &p) : Protocol(p){};
 
  private:
-  resp::MsgParser parser;
+  std::string line;
 };
 
 };  // service

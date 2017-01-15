@@ -6,7 +6,7 @@
 
 #include <unistd.h>
 
-#include "logging.hh"
+#include "logging.h"
 
 namespace reiase {
 namespace service {

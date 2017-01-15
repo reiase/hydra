@@ -4,7 +4,7 @@
 #include <functional>
 #include <thread>
 
-#include "logging.hh"
+#include "logging.h"
 #include "protocol.h"
 
 namespace reiase {
