@@ -1,8 +1,6 @@
 #include <mutex>
 #include <vector>
 
-#include <zservice.hh>
-
 template <typename T> class Partitioner {
 private:
   int numParts;
@@ -47,7 +45,7 @@ public:
     }
   }
 };
-
+/*
 class ParameterManager : ZService {
 private:
   std::vector<std::string> slaves;
@@ -65,3 +63,4 @@ public:
     rpc([&](std::string x) -> std::string {});
   }
 };
+*/

@@ -13,13 +13,13 @@ else()
         message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
 endif()
 
-add_subdirectory(3rdparty)
+#add_subdirectory(3rdparty)
 
-INCLUDE_DIRECTORIES(
-  include
-  ${CMAKE_CURRENT_BINARY_DIR}/3rdparty/include)
-
-LINK_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/3rdparty/lib)
+#INCLUDE_DIRECTORIES(
+#  include
+#  ${CMAKE_CURRENT_BINARY_DIR}/3rdparty/include)
+#
+#LINK_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/3rdparty/lib)
 
 add_subdirectory(src)
 
