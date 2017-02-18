@@ -4,6 +4,7 @@ SET(tests
   test_resp
   test_parametermanager
   test_reactor
+  test_threadpool
   )
 
 foreach(test ${tests})
