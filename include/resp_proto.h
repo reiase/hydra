@@ -13,13 +13,12 @@ namespace service {
 
 class RESPProto;
 
-template <>
-struct proto_traits<RESPProto> {
+template <> struct proto_traits<RESPProto> {
   typedef typename resp::Msg MSGTYPE;
 };
 
 class RESPProto : public Protocol<RESPProto> {
- public:
+public:
   void onInitImpl() {
     int opts = fcntl(fd, F_GETFL) | O_NONBLOCK;
     fcntl(fd, F_SETFL, opts);
@@ -40,21 +39,21 @@ class RESPProto : public Protocol<RESPProto> {
           write(fd, obuffer.c_str(), obuffer.size());
           parser.reset();
           //          LOG("onRead rsp: ", obuffer.c_str());
-        }  // end if
-      }    // end for
-    }      // end while
+        } // end if
+      }   // end for
+    }     // end while
   }
 
- public:
+public:
   RESPProto(){};
   RESPProto(int x) : Protocol(x){};
   RESPProto(const RESPProto &p) : Protocol(p){};
 
- private:
+private:
   resp::MsgParser parser;
 };
 
-};  // service
-};  // reiase
+}; // service
+}; // reiase
 
 #endif /* RESP_PROTO_H */

@@ -13,18 +13,25 @@
 #include "logging.h"
 #include "protocol.h"
 #include "service.hh"
+#include "threadpool.h"
 
 namespace reiase {
 namespace service {
 
 #define MAX_EVENTS 1024
 
-template <typename PROTO>
-class Reactor : public Service<PROTO> {
- public:
-  void bind(int s) { service_fd = s; }
+template <typename PROTO> class Reactor : public Service<PROTO> {
+public:
+  typedef typename Protocol<PROTO>::MSGTYPE MSGTYPE;
+  typedef typename Protocol<PROTO>::HANDLER HANDLER;
 
- private:
+  void bind(int s) { service_fd = s; }
+  Reactor(int threadNum = 4, int taskNum = 100) {
+    pool = ThreadPool<Task1>(threadNum, taskNum);
+    pool.init();
+  }
+
+private:
   int accept_connection(int service_fd) {
     sockaddr_in addrClient;
     int addrClientSize = sizeof(addrClient);
@@ -38,12 +45,14 @@ class Reactor : public Service<PROTO> {
     epoll_fd = epoll_create1(0);
     struct epoll_event ev = {0};
     struct epoll_event *evs = NULL;
-    if (epoll_fd < 0) ERROR("failed to create a epoll fd");
+    if (epoll_fd < 0)
+      ERROR("failed to create a epoll fd");
 
     ev.data.fd = service_fd;
     ev.events = EPOLLIN;
     int retval = epoll_ctl(epoll_fd, EPOLL_CTL_ADD, service_fd, &ev);
-    if (retval == -1) ERROR("failed to listening service socket");
+    if (retval == -1)
+      ERROR("failed to listening service socket");
 
     evs = (struct epoll_event *)malloc(sizeof(struct epoll_event) * MAX_EVENTS);
 
@@ -55,10 +64,11 @@ class Reactor : public Service<PROTO> {
         struct epoll_event &e = evs[i];
         if (service_fd == e.data.fd) {
           int client_fd = accept_connection(service_fd);
-          if (-1 == client_fd) ERROR("failed to accept a new connection");
+          if (-1 == client_fd)
+            ERROR("failed to accept a new connection");
 
           PROTO s(client_fd);
-          s.setHandler(this->handler);
+          // s.setHandler(this->handler);
           sessions[client_fd] = s;
           sessions[client_fd].onInit();
           sessions[client_fd].setHandler(this->handler);
@@ -66,11 +76,21 @@ class Reactor : public Service<PROTO> {
           ev.data.fd = client_fd;
           ev.events = EPOLLIN | EPOLLHUP | EPOLLRDHUP;
           int retval = epoll_ctl(epoll_fd, EPOLL_CTL_ADD, client_fd, &ev);
-          if (retval == -1) ERROR("failed to create new session");
+          if (retval == -1)
+            ERROR("failed to create new session");
         } else {
           auto &session = sessions[e.data.fd];
-          if (e.events & EPOLLIN) session.onRead();
-          if (e.events & EPOLLOUT) session.onWrite();
+          if (e.events & EPOLLIN) {
+            if (1 == session.flag)
+              break;
+            Task1 task;
+            session.flag = 1;
+            task.fd = session.fd;
+            task.epoll_fd = epoll_fd;
+            task.proto = &session;
+            pool.add_task(task);
+          }
+
           if ((e.events & EPOLLERR) || (e.events & EPOLLRDHUP)) {
             int should_close = (e.events & EPOLLRDHUP) ? 1 : 0;
             should_close = session.onError() ? 1 : should_close;
@@ -86,18 +106,33 @@ class Reactor : public Service<PROTO> {
               session.destory();
             }
           }
-        }  // end for
+        } // end for
       }
     }
   };
 
- private:
+  struct Task1 {
+    int fd;
+    int epoll_fd;
+    PROTO *proto;
+    void operator()() {
+      if (NULL != proto) {
+        proto->onRead();
+        proto->flag = 0;
+      }
+    }
+  };
+
+private:
   int epoll_fd;
   int service_fd;
+  int thread_num;
+  int task_num;
 
   std::vector<Protocol<PROTO>> sessions;
+  ThreadPool<Task1> pool;
 };
-};  // service
-};  // reiase
+}; // service
+}; // reiase
 
 #endif /* REACTOR_H */

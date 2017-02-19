@@ -1,8 +1,6 @@
 #include <iostream>
-#include <zmq.h>
+//#include <zmq.h>
 
 #include "hydra.hh"
 
-int test(){
-  std::cout << "hi" << std::endl;
-}
+int test() { std::cout << "hi" << std::endl; }

@@ -55,7 +55,10 @@ public:
   ThreadPool() : ThreadPool(0) {}
   ThreadPool(int workers, int tasks = 100)
       : max_workers(workers), max_tasks(tasks), task_queue_size(0),
-        worker_queue_size(0) {}
+        worker_queue_size(0) {
+    worker_lock = PTHREAD_MUTEX_INITIALIZER;
+    task_lock = PTHREAD_MUTEX_INITIALIZER;
+  }
 
   void init(void) { enlarge(max_workers); }
 

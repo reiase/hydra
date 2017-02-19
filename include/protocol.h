@@ -11,21 +11,19 @@
 namespace reiase {
 namespace service {
 
-template <typename PROTO>
-struct proto_traits;
+template <typename PROTO> struct proto_traits;
 
 #define DEFAULT_BUFSIZE 4096
-template <typename PROTO>
-class Protocol {
- public:
+template <typename PROTO> class Protocol {
+public:
   typedef typename proto_traits<PROTO>::MSGTYPE MSGTYPE;
   typedef typename std::function<MSGTYPE(const MSGTYPE &)> HANDLER;
 
- public:
+public:
   static Protocol<PROTO> *create() { return new PROTO(); }
   static Protocol<PROTO> *create(int s) { return new PROTO(s); }
 
- public:
+public:
   void onInit() { static_cast<PROTO *>(this)->onInitImpl(); }
   void onRead() { static_cast<PROTO *>(this)->onReadImpl(); }
   void onWrite() { static_cast<PROTO *>(this)->onWriteImpl(); }
@@ -54,18 +52,19 @@ class Protocol {
   void setHandler(HANDLER h) { handler = h; };
   void setBufSize(int x) { buf_size = x; }
 
- public:
+public:
   Protocol() { buf_size = DEFAULT_BUFSIZE; };
   Protocol(int x) : fd(x) { buf_size = DEFAULT_BUFSIZE; };
   Protocol(const Protocol<PROTO> &p) { copy(p); };
 
- public:
+public:
   HANDLER handler;
   int fd;
   int buf_size;
+  int flag;
 };
 
-};  // service
-};  // reiase
+}; // service
+}; // reiase
 
 #endif /* PROTOCOL_H */
